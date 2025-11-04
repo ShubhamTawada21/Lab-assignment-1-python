@@ -1,4 +1,4 @@
-# Author: Jeet lal
+# Author: Shubham
 # Date: 03/10/2025
 # Project: Daily calorie tracker
 
@@ -45,5 +45,6 @@ elif total_calories < daily_limit:
     print(f"you are {daily_limit-total_calories} calories under your limit.GJ")
 else:
     print("Perfect! you hit your daily calorie limit exactly.")
+
 
 print("Thank you")

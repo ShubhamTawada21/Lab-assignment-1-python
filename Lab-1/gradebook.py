@@ -39,9 +39,6 @@ def lowest(marks):
 
 
 
-
-# grade function
-
 def give_grades(marks):
     
     grades = {}
@@ -67,20 +64,12 @@ def grade_count(grades): # counts grades
 
 
 
-# pass/fail using list comprehension
-
 def pass_fail(marks):
     passed = [name for name, score in marks.items() if score >= 40]
     failed = [name for name, score in marks.items() if score < 40]
     return passed, failed
 
 
-
-
-# data entry 
-
-
-# user enters marks by hand.
 def enter_marks():
     data = {}
     print("\nEnter student marks (type 'done' to stop).")
@@ -98,11 +87,6 @@ def enter_marks():
         except:
             print("Invalid number.")
     return data
-
-
-
-
-# loading the csv file
 
 
 def load_csv(): 
@@ -136,9 +120,6 @@ def load_csv():
 
 
 
-
-# rint the results
-
 def print_table(marks, grades):
     print("\n--- Report Card ---")
     print("Name\t\tMarks\tGrade")
@@ -147,9 +128,7 @@ def print_table(marks, grades):
         print(f"{name}\t\t{marks[name]}\t{grades[name]}")
 
 
-
-
-# analysis 
+ 
 
 def analyze(marks):
     if not marks:
@@ -177,9 +156,6 @@ def analyze(marks):
     print_table(marks, grades)
 
 
-
-
-# menu 
 
 def menu():
     print("\n---")
@@ -210,4 +186,5 @@ def main():
             input("Press enter to go back to menu.")
 
 if __name__ == "__main__":
+
     main() 

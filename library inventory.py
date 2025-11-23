@@ -1,143 +1,176 @@
-import json
-from pathlib import Path
-import logging
-
-# Configure logging
-logging.basicConfig(filename="library.log", level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
-
 class Book:
-    def __init__(self, title, author, isbn, status="available"):
+    def __init__(self, book_id, title, author, quantity):
+        self.book_id = book_id
         self.title = title
         self.author = author
-        self.isbn = isbn
-        self.status = status
+        self.quantity = quantity
+        self.borrowed_count = 0
 
-    def __str__(self):
-        return f"Title: {self.title} | Author: {self.author} | ISBN: {self.isbn} | Status: {self.status}"
+    def is_available(self):
+        return self.quantity > self.borrowed_count
 
-    def to_dict(self):
-        return self.__dict__
-
-    def issue(self):
-        if self.status == "available":
-            self.status = "issued"
+    def borrow(self):
+        if self.is_available():
+            self.borrowed_count += 1
             return True
         return False
 
     def return_book(self):
-        if self.status == "issued":
-            self.status = "available"
+        if self.borrowed_count > 0:
+            self.borrowed_count -= 1
             return True
         return False
 
-    def is_available(self):
-        return self.status == "available"
+    def display_info(self):
+        print(f"ID: {self.book_id}, Title: {self.title}, Author: {self.author}, Available: {self.quantity - self.borrowed_count}")
 
-class LibraryInventory:
-    def __init__(self, catalog_file="catalog.json"):
-        self.catalog_file = Path(catalog_file)
+
+class User:
+    def __init__(self, user_id, name):
+        self.user_id = user_id
+        self.name = name
+        self.borrowed_books = []
+
+    def borrow_book(self, book):
+        if book.borrow():
+            self.borrowed_books.append(book)
+            print(f"{self.name} borrowed '{book.title}'.")
+        else:
+            print(f"Sorry, '{book.title}' is not available right now.")
+
+    def return_book(self, book):
+        if book in self.borrowed_books and book.return_book():
+            self.borrowed_books.remove(book)
+            print(f"{self.name} returned '{book.title}'.")
+        else:
+            print(f"{self.name} doesn't have '{book.title}' borrowed.")
+
+    def view_borrowed_books(self):
+        if self.borrowed_books:
+            print(f"{self.name}'s borrowed books:")
+            for book in self.borrowed_books:
+                book.display_info()
+        else:
+            print(f"{self.name} has no borrowed books.")
+
+
+class Library:
+    def __init__(self):
         self.books = []
-        self.load_books()
+        self.users = []
 
-    def load_books(self):
-        try:
-            if self.catalog_file.exists():
-                with open(self.catalog_file, "r") as f:
-                    data = json.load(f)
-                self.books = [Book(**book) for book in data]
-                logging.info("Catalog loaded successfully.")
-            else:
-                self.books = []
-        except Exception as e:
-            self.books = []
-            logging.error(f"Error loading catalog: {e}")
-
-    def save_books(self):
-        try:
-            with open(self.catalog_file, "w") as f:
-                json.dump([book.to_dict() for book in self.books], f, indent=4)
-            logging.info("Catalog saved successfully.")
-        except Exception as e:
-            logging.error(f"Error saving catalog: {e}")
-
-    def add_book(self, title, author, isbn):
-        if any(book.isbn == isbn for book in self.books):
-            print("Book with this ISBN already exists.")
-            return False
-        book = Book(title, author, isbn)
+    def add_book(self, book):
         self.books.append(book)
-        self.save_books()
-        print("Book added successfully.")
-        return True
+        print(f"Book '{book.title}' added to library.")
 
-    def search_by_title(self, title):
-        return [book for book in self.books if title.lower() in book.title.lower()]
+    def register_user(self, user):
+        self.users.append(user)
+        print(f"User '{user.name}' registered.")
 
-    def search_by_isbn(self, isbn):
-        return next((book for book in self.books if book.isbn == isbn), None)
+    def find_book_by_title(self, title):
+        found_books = [book for book in self.books if title.lower() in book.title.lower()]
+        return found_books
 
-    def display_all(self):
-        if not self.books:
-            print("No books in the catalog.")
-        for book in self.books:
-            print(book)
+    def list_books(self):
+        if self.books:
+            print("Library Books:")
+            for book in self.books:
+                book.display_info()
+        else:
+            print("No books in the library.")
+
+    def list_users(self):
+        if self.users:
+            print("Registered Users:")
+            for user in self.users:
+                print(f"ID: {user.user_id}, Name: {user.name}")
+        else:
+            print("No registered users.")
+
 
 def main():
-    inventory = LibraryInventory()
+    library = Library()
+
+    # Adding sample books
+    library.add_book(Book(1, "Harry Potter and the Philosopher's Stone", "J.K. Rowling", 5))
+    library.add_book(Book(2, "The Hobbit", "J.R.R. Tolkien", 3))
+    library.add_book(Book(3, "1984", "George Orwell", 2))
+
+    # Registering users
+    library.register_user(User(1, "Alice"))
+    library.register_user(User(2, "Bob"))
+
     while True:
-        print("\n--- Library Inventory Manager ---")
-        print("1. Add Book")
-        print("2. Issue Book")
-        print("3. Return Book")
-        print("4. View All Books")
-        print("5. Search Book by Title")
-        print("6. Search Book by ISBN")
+        print("\nLibrary Management System Menu")
+        print("1. List all books")
+        print("2. List all users")
+        print("3. Search book by title")
+        print("4. Borrow a book")
+        print("5. Return a book")
+        print("6. View borrowed books")
         print("7. Exit")
 
-        choice = input("Enter your choice: ").strip()
-        if choice == "1":
-            title = input("Enter title: ")
-            author = input("Enter author: ")
-            isbn = input("Enter ISBN: ")
-            inventory.add_book(title, author, isbn)
-        elif choice == "2":
-            isbn = input("Enter ISBN to issue: ").strip()
-            book = inventory.search_by_isbn(isbn)
-            if book and book.issue():
-                inventory.save_books()
-                print("Book issued successfully.")
+        choice = input("Enter your choice: ")
+
+        if choice == '1':
+            library.list_books()
+
+        elif choice == '2':
+            library.list_users()
+
+        elif choice == '3':
+            title = input("Enter book title to search: ")
+            found_books = library.find_book_by_title(title)
+            if found_books:
+                for book in found_books:
+                    book.display_info()
             else:
-                print("Book not found or already issued.")
-        elif choice == "3":
-            isbn = input("Enter ISBN to return: ").strip()
-            book = inventory.search_by_isbn(isbn)
-            if book and book.return_book():
-                inventory.save_books()
-                print("Book returned successfully.")
-            else:
-                print("Book not found or not issued.")
-        elif choice == "4":
-            inventory.display_all()
-        elif choice == "5":
-            title = input("Enter title to search: ").strip()
-            books = inventory.search_by_title(title)
-            if books:
-                for book in books:
-                    print(book)
-            else:
-                print("No book found with the title.")
-        elif choice == "6":
-            isbn = input("Enter ISBN to search: ").strip()
-            book = inventory.search_by_isbn(isbn)
-            if book:
-                print(book)
-            else:
-                print("No book found with the ISBN.")
-        elif choice == "7":
-            print("Exiting the Library Inventory Manager. Goodbye!")
+                print("No books found with that title.")
+
+        elif choice == '4':
+            try:
+                user_id = int(input("Enter user ID: "))
+                book_id = int(input("Enter book ID to borrow: "))
+                user = next((u for u in library.users if u.user_id == user_id), None)
+                book = next((b for b in library.books if b.book_id == book_id), None)
+                if user and book:
+                    user.borrow_book(book)
+                else:
+                    print("Invalid user ID or book ID.")
+            except ValueError:
+                print("Invalid input. Please enter numeric IDs.")
+
+        elif choice == '5':
+            try:
+                user_id = int(input("Enter user ID: "))
+                book_id = int(input("Enter book ID to return: "))
+                user = next((u for u in library.users if u.user_id == user_id), None)
+                book = next((b for b in library.books if b.book_id == book_id), None)
+                if user and book:
+                    user.return_book(book)
+                else:
+                    print("Invalid user ID or book ID.")
+            except ValueError:
+                print("Invalid input. Please enter numeric IDs.")
+
+        elif choice == '6':
+            try:
+                user_id = int(input("Enter user ID to view borrowed books: "))
+                user = next((u for u in library.users if u.user_id == user_id), None)
+                if user:
+                    user.view_borrowed_books()
+                else:
+                    print("Invalid user ID.")
+            except ValueError:
+                print("Invalid input. Please enter numeric user ID.")
+
+        elif choice == '7':
+            print("Exiting the system. Goodbye!")
             break
+
         else:
-            print("Invalid choice. Please try again.")
+            print("Invalid choice, please try again.")
+
 
 if __name__ == "__main__":
     main()
